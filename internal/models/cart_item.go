@@ -1,8 +1,8 @@
 package models
 
 type CartItem struct {
-	ID 		 int
-	cart_id  int
+	ID 		 int64
+	cart_id  int64
 	product  string
 	quantity int
 }

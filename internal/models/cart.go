@@ -1,5 +1,5 @@
 package models
 
 type Cart struct {
-	ID int
+	ID int64
 }
