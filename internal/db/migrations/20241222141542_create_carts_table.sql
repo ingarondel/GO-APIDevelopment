@@ -1,7 +1,7 @@
 -- +goose Up
 -- +goose StatementBegin
 CREATE TABLE carts (
-    id SERIAL PRIMARY KEY
+    id BIGSERIAL PRIMARY KEY
 );
 -- +goose StatementEnd
 
