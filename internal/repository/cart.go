@@ -2,7 +2,7 @@ package repository
 
 import (
     "github.com/jmoiron/sqlx"
-    "github.com/ingarondel/GO-APIDevelopment/model" 
+    "github.com/ingarondel/GO-APIDevelopment/internal/model"
 )
 
 type CartRepository struct {
@@ -20,7 +20,7 @@ func (r *CartRepository) CreateCart(cart *model.Cart) error {
 
 func (r *CartRepository) GetCart(id int64) (model.Cart, error) {
     query := "SELECT id FROM carts WHERE id = $1"
-    var cart models.Cart
+    var cart model.Cart
     err := r.db.Get(&cart, query, id)
     return cart, err
 }
