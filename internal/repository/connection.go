@@ -2,16 +2,17 @@ package repository
 
 import (
 	"os"
-	"github.com/jmoiron/sqlx"
+	"database/sql"
+
 	_ "github.com/lib/pq"
 	"github.com/joho/godotenv"
 )
 
-var DB *sqlx.DB
+var DB *sql.DB
 
-func Connect() error { 
+func Connect() (*sql.DB, error) { 
 	if err := godotenv.Load(); err != nil {
-		return err 
+		return nil, err
 	}
 
 	host := os.Getenv("DB_HOST")
@@ -23,7 +24,10 @@ func Connect() error {
 
 	connect := "host=" + host + " user=" + user + " password=" + password + " dbname=" + dbname + " port=" + port + " sslmode=" + sslmode
 
-	var err error
-	DB, err = sqlx.Connect("postgres", connect) 
-	return err
+	database, err := sql.Open("postgres", connect)
+	if err != nil {
+		return nil, err
+	}
+
+	return database, nil
 }
