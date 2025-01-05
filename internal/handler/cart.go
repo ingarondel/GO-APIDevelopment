@@ -11,8 +11,8 @@ import (
 )
 
 type CartHandler struct {
-    cartRepo *repository.CartRepository
-    cartItemRepo  *repository.CartItemRepository
+    cartRepo     *repository.CartRepository
+    cartItemRepo *repository.CartItemRepository
 }
 
 func NewCartHandler(cartRepo *repository.CartRepository, cartItemRepo *repository.CartItemRepository) *CartHandler {
@@ -21,7 +21,9 @@ func NewCartHandler(cartRepo *repository.CartRepository, cartItemRepo *repositor
 
 func (h *CartHandler) CreateCart(w http.ResponseWriter, r *http.Request) {
     cart := &model.Cart{}
-    if err := h.cartRepo.CreateCart(cart); err != nil {
+
+    ctx := r.Context()  
+    if err := h.cartRepo.CreateCart(ctx, cart); err != nil {
         http.Error(w, err.Error(), http.StatusInternalServerError)
         return
     }
@@ -33,20 +35,24 @@ func (h *CartHandler) GetCart(w http.ResponseWriter, r *http.Request) {
     vars := mux.Vars(r)
     cartID, _ := strconv.ParseInt(vars["cartId"], 10, 64)
 
-    cart, err := h.cartRepo.GetCart(cartID)
+    ctx := r.Context()
+
+    cart, err := h.cartRepo.GetCart(ctx, cartID)
     if err != nil {
         http.Error(w, err.Error(), http.StatusNotFound)
         return
     }
 
-    items, err := h.cartItemRepo.GetCartItems(cartID)
+
+    items, err := h.cartItemRepo.GetCartItems(ctx, cartID)
+
     if err != nil {
         http.Error(w, err.Error(), http.StatusInternalServerError)
         return
     }
 
     response := map[string]interface{}{
-        "id": cart.ID,
+        "id":    cart.ID,
         "items": items,
     }
     w.WriteHeader(http.StatusOK)
