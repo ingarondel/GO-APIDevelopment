@@ -28,6 +28,7 @@ func (h *CartItemHandler) AddCartItem(w http.ResponseWriter, r *http.Request) {
     }
     item.CartID = cartID
 
+
     ctx := r.Context()  
     if err := h.cartItemRepo.CreateCartItem(ctx, &item); err != nil {
         http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -42,8 +43,8 @@ func (h *CartItemHandler) DeleteCartItem(w http.ResponseWriter, r *http.Request)
     cartID, _ := strconv.ParseInt(vars["cartId"], 10, 64)
     itemID, _ := strconv.ParseInt(vars["itemId"], 10, 64)
 
-    ctx := r.Context()  
 
+    ctx := r.Context()  
     if err := h.cartItemRepo.DeleteCartItem(ctx, cartID, itemID); err != nil {
         http.Error(w, err.Error(), http.StatusNotFound)
         return
@@ -54,8 +55,8 @@ func (h *CartItemHandler) DeleteCartItem(w http.ResponseWriter, r *http.Request)
 func (h *CartItemHandler) GetCartItems(w http.ResponseWriter, r *http.Request) {
     vars := mux.Vars(r)
     cartID, _ := strconv.ParseInt(vars["cartId"], 10, 64)
-    ctx := r.Context()
 
+    ctx := r.Context()
     items, err := h.cartItemRepo.GetCartItems(ctx, cartID)
     if err != nil {
         http.Error(w, err.Error(), http.StatusInternalServerError)

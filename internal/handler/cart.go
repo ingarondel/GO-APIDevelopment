@@ -35,17 +35,15 @@ func (h *CartHandler) GetCart(w http.ResponseWriter, r *http.Request) {
     vars := mux.Vars(r)
     cartID, _ := strconv.ParseInt(vars["cartId"], 10, 64)
 
-    ctx := r.Context()
 
+    ctx := r.Context()
     cart, err := h.cartRepo.GetCart(ctx, cartID)
     if err != nil {
         http.Error(w, err.Error(), http.StatusNotFound)
         return
     }
 
-
     items, err := h.cartItemRepo.GetCartItems(ctx, cartID)
-
     if err != nil {
         http.Error(w, err.Error(), http.StatusInternalServerError)
         return
