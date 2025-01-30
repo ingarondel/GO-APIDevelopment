@@ -1,8 +1,8 @@
 package model
 
 type CartItem struct {
-	ID 		 int64
-	cart_id  int64
-	product  string
-	quantity int
+    ID       int64  `db:"id"`
+    CartID   int64  `db:"cart_id"`
+    Product  string `db:"product"`
+    Quantity int    `db:"quantity"`
 }
