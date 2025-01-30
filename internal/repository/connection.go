@@ -8,7 +8,12 @@ import (
 	"github.com/joho/godotenv"
 )
 
+// TODO - не знаю зачем это,но думаю оно тебе не нужно
 var DB *sql.DB
+// TODO переименуй это как NewPostgressConnetion
+// TODO перенеси это в db package
+// TODO os.Getenv должно происходить в config.go сюда же ты только передаешь структуру Config
+
 
 func Connect() (*sql.DB, error) { 
 	if err := godotenv.Load(); err != nil {
@@ -22,9 +27,12 @@ func Connect() (*sql.DB, error) {
 	port := os.Getenv("DB_PORT")
 	sslmode := os.Getenv("DB_SSLMODE")
 
+	// TODO для формирования строк исопльзуй fmt.Sprintf
+	// connect -> connectionString
 	connect := "host=" + host + " user=" + user + " password=" + password + " dbname=" + dbname + " port=" + port + " sslmode=" + sslmode
-
-	database, err := sql.Open("postgres", connect)
+// TODO "postgres" - тоже достаешь и Config
+// TODO database -> conn
+database, err := sql.Open("postgres", connect)
 	if err != nil {
 		return nil, err
 	}

@@ -6,12 +6,21 @@ import (
 
     "github.com/ingarondel/GO-APIDevelopment/internal/repository"
 )
-
+// TODO сюда передаешь только уровень handler
+// TODO     r := mux.NewRouter() создаешь тут и возвращаешь в main
 func Routes(r *mux.Router, db *sql.DB) {
+    // TODO инициализируется на уровне repository
+        // т.е. передается как зависимость для структуры Repository
     cartItemRepo := repository.NewCartItemRepository(db)
+    // TODO инициализируется на уровне handler
+    // т.е. передается как зависимость для структуры Handler
     cartItemHandler := NewCartItemHandler(cartItemRepo)
 
+    // TODO инициализируется на уровне repository
+    // т.е. передается как зависимость для структуры Repository
     cartRepo := repository.NewCartRepository(db)
+        // TODO инициализируется на уровне handler
+    // т.е. передается как зависимость для структуры Handler
     cartHandler := NewCartHandler(cartRepo, cartItemRepo)
 
     r.HandleFunc("/carts", cartHandler.CreateCart).Methods("POST")
