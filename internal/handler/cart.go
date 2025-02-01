@@ -1,83 +1,94 @@
 package handler
 
 import (
+    "context"
     "encoding/json"
     "net/http"
     "strconv"
+    "time"
 
     "github.com/gorilla/mux"
     "github.com/ingarondel/GO-APIDevelopment/internal/model"
-    "github.com/ingarondel/GO-APIDevelopment/internal/repository"
+    "github.com/ingarondel/GO-APIDevelopment/internal/service"
 )
-// TODO тут могут быть только зависимости от уровня service
+
+type ErrorResponse struct {
+    Message string `json:"message"`
+}
+
 type CartHandler struct {
-    cartRepo     *repository.CartRepository
-    cartItemRepo *repository.CartItemRepository
+    cartService     *service.CartService
+    cartItemService *service.CartItemService
 }
 
-// TODO cюда передаются зависимости от уровня service
-func NewCartHandler(cartRepo *repository.CartRepository, cartItemRepo *repository.CartItemRepository) *CartHandler {
-    return &CartHandler{cartRepo, cartItemRepo}
+func NewCartHandler(cartService *service.CartService, cartItemService *service.CartItemService) *CartHandler {
+    return &CartHandler{
+      cartService:     cartService,
+      cartItemService: cartItemService,
+    }
 }
-// TODO необходимо создать контекст с таймаутом
+
 func (h *CartHandler) CreateCart(w http.ResponseWriter, r *http.Request) {
-    // TODO CreateCart - по логике мне кажется ему не нужно передавать  &model.Cart{}, тк ему впринципе для создания cart
-    // ничего не нужно передавать
-    cart := &model.Cart{}
+    ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+    defer cancel()
 
-    ctx := r.Context()  
-    // TODO CreateCart - должен возвращать созданную cart
-    if err := h.cartRepo.CreateCart(ctx, cart); err != nil {
-        http.Error(w, err.Error(), http.StatusInternalServerError)
-        return
+    cart, err := h.cartService.CreateCart(ctx)
+    if err != nil {
+      respondWithError(w, http.StatusInternalServerError, "Failed to create cart")
+      return
     }
     w.WriteHeader(http.StatusCreated)
     json.NewEncoder(w).Encode(cart)
 }
-// TODO необходимо создать контекст с таймаутом
+
 func (h *CartHandler) GetCart(w http.ResponseWriter, r *http.Request) {
     vars := mux.Vars(r)
-    // TODO нужно обязатель оборачивать ошибки 
-    // if err!=nil{
-    //     ...
-    // }
-    cartID, _ := strconv.ParseInt(vars["cartId"], 10, 64)
+    cartID, err := strconv.ParseInt(vars["cartId"], 10, 64)
+    if err!=nil{
+      respondWithError(w, http.StatusBadRequest, "Invalid cart ID")
+      return
+    }
+    
+    ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+    defer cancel()
 
-
-    ctx := r.Context()
-    cart, err := h.cartRepo.GetCart(ctx, cartID)
-// TODO необходимо обработать ошибку, когда cart не найдена(404) и также учесть что могут быть другие ошибки(500)
+    cart, err := h.cartService.GetCart(ctx, cartID)
     if err != nil {
-// TODO для возврата ошибок используй тот же    
-//  w.WriteHeader(http.StatusCreated)
-//     json.NewEncoder(w).Encode(some_thing)
-// но нужно возвращать свою структуру ошибки 
-// type ErrorResponse struct{
-// message 'json:message'
-// }
-        http.Error(w, err.Error(), http.StatusNotFound)
-        return
+      respondWithErrorFromMap(w, err)
+      return
     }
 
-    items, err := h.cartItemRepo.GetCartItems(ctx, cartID)
+   items, err := h.cartItemService.GetCartItems(ctx, cartID)
     if err != nil {
-        // TODO необходимо обработать ошибку, когда cart не найдена(404) и также учесть что могут быть другие ошибки(500)
-        // TODO для возврата ошибок используй тот же    
-//  w.WriteHeader(http.StatusCreated)
-//     json.NewEncoder(w).Encode(some_thing)
-// но нужно возвращать свою структуру ошибки 
-// type ErrorResponse struct{
-// message 'json:message'
-// }
-        http.Error(w, err.Error(), http.StatusInternalServerError)
-        return
+      respondWithError(w, http.StatusInternalServerError, "Failed to retrieve cart items")
+      return
     }
 
-    // TODO создай на уровне model структуру GetCartReponce и опиши там поля необходимые для возврата
-    response := map[string]interface{}{
-        "id":    cart.ID,
-        "items": items,
+    response := model.Cart{
+      ID:    cart.ID,
+      Items: items,
     }
+
     w.WriteHeader(http.StatusOK)
     json.NewEncoder(w).Encode(response)
+}
+func respondWithError(w http.ResponseWriter, code int, message string) {
+    w.WriteHeader(code)
+    json.NewEncoder(w).Encode(ErrorResponse{Message: message})
+}
+
+func respondWithErrorFromMap(w http.ResponseWriter, err error) {
+    errorResponses := map[error]struct {
+      code    int
+      message string
+    }{
+      service.ErrInvalidCartID:  {http.StatusBadRequest, "Invalid cart ID"},
+      service.ErrCartNotFound:    {http.StatusNotFound, "Cart not found"},
+    }
+
+    if response, ok := errorResponses[err]; ok {
+      respondWithError(w, response.code, response.message)
+    } else {
+      respondWithError(w, http.StatusInternalServerError, "Failed to retrieve cart")
+    }
 }

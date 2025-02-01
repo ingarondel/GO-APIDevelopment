@@ -11,11 +11,6 @@ import (
 )
 
 func main() {
-// TODO connection к db ты прокидываешь на уровень repository - там находятся все твои запросы к бд
-// TODO repository ты прокидываешь на уровень service - это твоя основная бизнес логика и там у тебя в основном будут вызовы repository
-// TODO service ты прокидываешь на уровень handler - там у тебя логика по валидации запросов, вызова методов service и формирование ответов
-// TODO handler ты прокидываешь в route и там мапишь на endpoints
-
     cfg, err := config.LoadConfig()
     if err != nil {
       log.Fatal("Config loading failed:", err)

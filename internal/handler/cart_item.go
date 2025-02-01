@@ -1,82 +1,115 @@
 package handler
 
 import (
+    "context"
     "encoding/json"
     "net/http"
     "strconv"
+    "time"
+    "errors"
 
     "github.com/gorilla/mux"
     "github.com/ingarondel/GO-APIDevelopment/internal/model"
-    "github.com/ingarondel/GO-APIDevelopment/internal/repository"
+    "github.com/ingarondel/GO-APIDevelopment/internal/service"
 )
-// TODO тут могут быть только зависимости от уровня service
+
 type CartItemHandler struct {
-    cartItemRepo *repository.CartItemRepository
+    cartItemService *service.CartItemService
 }
-// TODO cюда передаются зависимости от уровня service
-func NewCartItemHandler(cartItemRepo *repository.CartItemRepository) *CartItemHandler {
-    return &CartItemHandler{cartItemRepo}
+
+func NewCartItemHandler(cartItemService *service.CartItemService) *CartItemHandler {
+    return &CartItemHandler{
+        cartItemService: cartItemService,
+    }
 }
-// TODO необходимо создать контекст с таймаутом
+
 func (h *CartItemHandler) AddCartItem(w http.ResponseWriter, r *http.Request) {
     vars := mux.Vars(r)
     
-    cartID, _ := strconv.ParseInt(vars["cartId"], 10, 64)
-     // TODO нужно обязатель оборачивать ошибки 
-    // if err!=nil{
-    //     ...
-    // }
-    // TODO для каждого запроса лучше создавать свою структуру в этом случае нужно model.AddCartItemRequest
-    // тк мы хотим различать структуры для запросов и ответов и структуры для бд
-    var item model.CartItem
-    if err := json.NewDecoder(r.Body).Decode(&item); err != nil || item.Product == "" || item.Quantity <= 0 {
-        http.Error(w, "Invalid input", http.StatusBadRequest)
+    cartID, err := strconv.ParseInt(vars["cartId"], 10, 64)
+      if err!=nil{
+        http.Error(w, "Invalid cart ID", http.StatusBadRequest)
         return
+      }
+
+    var cartitem model.CartItem
+    if err := json.NewDecoder(r.Body).Decode(&cartitem); err != nil || cartitem.Product == "" || cartitem.Quantity <= 0 {
+      http.Error(w, "Invalid input", http.StatusBadRequest)
+      return
     }
-    item.CartID = cartID
 
+    ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+    defer cancel()
 
-    ctx := r.Context()  
-    if err := h.cartItemRepo.CreateCartItem(ctx, &item); err != nil {
-        // TODO необходимо обработать ошибку, когда cart не найдена(404) и также учесть что могут быть другие ошибки(500)
-        http.Error(w, err.Error(), http.StatusInternalServerError)
+    item := model.CartItem{
+      Product:  cartitem.Product,
+      Quantity: cartitem.Quantity,
+      CartID:   cartID,
+    }
+
+    if err := h.cartItemService.CreateCartItem(ctx, &item); err != nil {
+      if errors.Is(err, service.ErrCartNotFound) {
+        http.Error(w, "Cart not found", http.StatusNotFound)
         return
+      }
+      http.Error(w, "Internal server error", http.StatusInternalServerError)
+      return
     }
+
     w.WriteHeader(http.StatusCreated)
     json.NewEncoder(w).Encode(item)
 }
-// TODO необходимо создать контекст с таймаутом
+
 func (h *CartItemHandler) DeleteCartItem(w http.ResponseWriter, r *http.Request) {
     vars := mux.Vars(r)
-    cartID, _ := strconv.ParseInt(vars["cartId"], 10, 64)
-    itemID, _ := strconv.ParseInt(vars["itemId"], 10, 64)
-     // TODO нужно обязатель оборачивать ошибки 
-    // if err!=nil{
-    //     ...
-    // }
 
-    ctx := r.Context()  
-    if err := h.cartItemRepo.DeleteCartItem(ctx, cartID, itemID); err != nil {
-                // TODO необходимо обработать ошибку, когда cart не найдена(404) и также учесть что могут быть другие ошибки(500)
-        http.Error(w, err.Error(), http.StatusNotFound)
-        return
+    cartID, err := strconv.ParseInt(vars["cartId"], 10, 64)
+    if err != nil {
+      http.Error(w, "Invalid cart ID", http.StatusBadRequest)
+      return
     }
+
+    itemID, err := strconv.ParseInt(vars["itemId"], 10, 64)
+    if err != nil {
+      http.Error(w, "Invalid item ID", http.StatusBadRequest)
+      return
+    }
+
+    ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+    defer cancel()
+
+    if err := h.cartItemService.DeleteCartItem(ctx, cartID, itemID); err != nil {
+       if errors.Is(err, service.ErrCartNotFound) {
+        http.Error(w, "Cart not found", http.StatusNotFound)
+        return
+      }
+      http.Error(w, "Internal server error", http.StatusInternalServerError)
+      return
+    }
+
     w.WriteHeader(http.StatusNoContent)
 }
-// TODO необходимо создать контекст с таймаутом
+
 func (h *CartItemHandler) GetCartItems(w http.ResponseWriter, r *http.Request) {
     vars := mux.Vars(r)
-    cartID, _ := strconv.ParseInt(vars["cartId"], 10, 64)
-// TODO нужно обязатель оборачивать ошибки 
-    // if err!=nil{
-    //     ...
-    // }
-    ctx := r.Context()
-    items, err := h.cartItemRepo.GetCartItems(ctx, cartID)
+
+    cartID, err := strconv.ParseInt(vars["cartId"], 10, 64)
     if err != nil {
-     // TODO необходимо обработать ошибку, когда cart не найдена(404) и также учесть что могут быть другие ошибки(500)
-        http.Error(w, err.Error(), http.StatusInternalServerError)
+      http.Error(w, "Invalid cart ID", http.StatusBadRequest)
+      return
+    }
+    
+    ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+    defer cancel()
+
+    items, err := h.cartItemService.GetCartItems(ctx, cartID)
+    if err != nil {
+       if errors.Is(err, service.ErrCartNotFound) {
+        http.Error(w, "Cart not found", http.StatusNotFound)
         return
+      }
+      http.Error(w, "Internal server error", http.StatusInternalServerError)
+      return
     }
 
     w.WriteHeader(http.StatusOK)
