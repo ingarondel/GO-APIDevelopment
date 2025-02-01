@@ -5,7 +5,7 @@ import (
     "net/http"
 
     "github.com/gorilla/mux"
-    "github.com/ingarondel/GO-APIDevelopment/internal/repository"
+    "github.com/ingarondel/GO-APIDevelopment/internal/db"
     "github.com/ingarondel/GO-APIDevelopment/internal/handler"
 )
 
@@ -33,7 +33,7 @@ func main() {
 
 
 
-    db, err := repository.Connect()
+    db, err := db.NewPostgresConnection()
     if err != nil {
         log.Fatal("Database connection failed:", err)
     }
