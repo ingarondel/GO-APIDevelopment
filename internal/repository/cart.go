@@ -3,7 +3,8 @@ package repository
 import (
     "context"
     "database/sql"
-    "time"
+    "errors"
+    "fmt"
 
     "github.com/ingarondel/GO-APIDevelopment/internal/model"
 )
@@ -33,11 +34,11 @@ func (r *CartRepository) GetCart(ctx context.Context, id int64) (model.Cart, err
     err := r.db.QueryRowContext(ctx, query, id).Scan(&cart.ID)
     if err != nil {
         if errors.Is(err, sql.ErrNoRows){
-            return cart, errors.New("cart not found")
+            return cart, fmt.Errorf("cart with ID %d not found", cart.ID)
         }
     }
       if err!=nil{
-        return fmt.Errorf("failed to get cart: %w", err)
+        return cart, fmt.Errorf("failed to get cart: %w", err)
       }    
     return cart, nil
 }
