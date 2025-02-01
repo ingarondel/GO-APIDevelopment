@@ -5,7 +5,6 @@ import (
     "fmt"
     "net/http"
 
-    "github.com/gorilla/mux"
     "github.com/ingarondel/GO-APIDevelopment/config"
     "github.com/ingarondel/GO-APIDevelopment/internal/db"
     "github.com/ingarondel/GO-APIDevelopment/internal/handler"
@@ -32,8 +31,7 @@ func main() {
       log.Fatal("Failed to run migrations:", err)
     }
 
-    r := mux.NewRouter()
-    handler.Routes(r, dbConnect)
+    r := handler.Routes(dbConnect)
 
     serverAddress := fmt.Sprintf("%s:%s", cfg.ServerHost, cfg.ServerPort)
     log.Printf("Server started on %s", serverAddress)
