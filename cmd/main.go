@@ -22,10 +22,6 @@ func main() {
 // }
 // и соотвествнно вернуть этот конфиг
 
-// TODO
-// Создаешь папку db и там же создаешь папку migrations(внутрь нее кидаешь все свои миграции)
-// в папке db нужно создать файлик db.go - там ты формируешь connection к бд и также поднимаешь свои миграции
-
 // TODO connection к db ты прокидываешь на уровень repository - там находятся все твои запросы к бд
 // TODO repository ты прокидываешь на уровень service - это твоя основная бизнес логика и там у тебя в основном будут вызовы repository
 // TODO service ты прокидываешь на уровень handler - там у тебя логика по валидации запросов, вызова методов service и формирование ответов
@@ -33,14 +29,18 @@ func main() {
 
 
 
-    db, err := db.NewPostgresConnection()
+    dbConnect, err := db.NewPostgresConnection()
     if err != nil {
         log.Fatal("Database connection failed:", err)
     }
-    defer db.Close()
+    defer dbConnect.Close()
+
+    if err := db.RunMigrations(dbConnect); err != nil {
+        log.Fatal("Failed to run migrations:", err)
+    }
 
     r := mux.NewRouter()
-    handler.Routes(r, db)
+    handler.Routes(r, dbConnect)
 
     log.Println("Server started on :3000")
     if err := http.ListenAndServe(":3000", r); err != nil { // TODO":3000" - нужно взять эти данные из config это твои ServerHost&ServerPort
