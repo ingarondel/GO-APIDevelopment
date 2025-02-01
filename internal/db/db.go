@@ -16,7 +16,7 @@ func NewPostgresConnection() (*sql.DB, error) {
         return nil, err
     }
 
-    connectionString := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s", cfg.Host, cfg.User, cfg.Password, cfg.DBName, cfg.Port, cfg.SSLMode)
+    connectionString := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s", cfg.PostgresHost, cfg.User, cfg.Password, cfg.DBName, cfg.PostgresPort, cfg.SSLMode)
 
 	connect, err := sql.Open("postgres", connectionString)
     if err != nil {

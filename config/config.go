@@ -6,12 +6,14 @@ import (
 )
 
 type Config struct {
-    Host     string
-    User     string
-    Password string
-    DBName   string
-    Port     string
-    SSLMode  string
+    PostgresHost     string
+    PostgresPort     string
+    ServerHost       string
+    ServerPort       string
+    User             string
+    Password         string
+    DBName           string
+    SSLMode          string
 }
 
 func LoadConfig() (*Config, error) {
@@ -20,11 +22,13 @@ func LoadConfig() (*Config, error) {
     }
 
     return &Config{
-        Host:     os.Getenv("DB_HOST"),
-        User:     os.Getenv("DB_USER"),
-        Password: os.Getenv("DB_PASSWORD"),
-        DBName:   os.Getenv("DB_NAME"),
-        Port:     os.Getenv("DB_PORT"),
-        SSLMode:  os.Getenv("DB_SSLMODE"),
+        PostgresHost:     os.Getenv("DB_HOST"),
+        PostgresPort:     os.Getenv("DB_PORT"),
+        ServerHost:       os.Getenv("SERVER_HOST"),
+        ServerPort:       os.Getenv("SERVER_PORT"),  
+        User:             os.Getenv("DB_USER"),
+        Password:         os.Getenv("DB_PASSWORD"),
+        DBName:           os.Getenv("DB_NAME"),
+        SSLMode:          os.Getenv("DB_SSLMODE"),
     }, nil
 }
