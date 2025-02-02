@@ -33,7 +33,7 @@ func (h *CartItemHandler) AddCartItem(w http.ResponseWriter, r *http.Request) {
       }
 
     var cartitem model.CartItem
-    if err := json.NewDecoder(r.Body).Decode(&cartitem); err != nil || cartitem.Product == "" || cartitem.Quantity <= 0 {
+    if err := h.cartItemService.CreateCartItem(ctx, &cartItem); err != nil {
       http.Error(w, "Invalid input", http.StatusBadRequest)
       return
     }
