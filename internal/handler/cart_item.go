@@ -11,6 +11,7 @@ import (
     "github.com/gorilla/mux"
     "github.com/ingarondel/GO-APIDevelopment/internal/model"
     "github.com/ingarondel/GO-APIDevelopment/internal/service"
+    "github.com/ingarondel/GO-APIDevelopment/internal/errorsx"
 )
 
 type CartItemHandler struct {
@@ -24,22 +25,22 @@ func NewCartItemHandler(cartItemService *service.CartItemService) *CartItemHandl
 }
 
 func (h *CartItemHandler) AddCartItem(w http.ResponseWriter, r *http.Request) {
+    ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+    defer cancel()
+
     vars := mux.Vars(r)
     
     cartID, err := strconv.ParseInt(vars["cartId"], 10, 64)
-      if err!=nil{
-        http.Error(w, "Invalid cart ID", http.StatusBadRequest)
+      if err!=nil || cartID <= 0{
+        respondWithError(w, http.StatusBadRequest, "Invalid cart ID")
         return
       }
 
     var cartitem model.CartItem
-    if err := h.cartItemService.CreateCartItem(ctx, &cartItem); err != nil {
-      http.Error(w, "Invalid input", http.StatusBadRequest)
+    if err := json.NewDecoder(r.Body).Decode(&cartitem); err != nil || cartitem.Product == "" || cartitem.Quantity <= 0 {
+      respondWithError(w, http.StatusBadRequest, "Invalid input")
       return
     }
-
-    ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-    defer cancel()
 
     item := model.CartItem{
       Product:  cartitem.Product,
@@ -48,11 +49,11 @@ func (h *CartItemHandler) AddCartItem(w http.ResponseWriter, r *http.Request) {
     }
 
     if err := h.cartItemService.CreateCartItem(ctx, &item); err != nil {
-      if errors.Is(err, service.ErrCartNotFound) {
-        http.Error(w, "Cart not found", http.StatusNotFound)
+      if errors.Is(err, errorsx.ErrCartNotFound) {
+        respondWithError(w, http.StatusNotFound, "Cart not found")
         return
       }
-      http.Error(w, "Internal server error", http.StatusInternalServerError)
+      respondWithError(w, http.StatusInternalServerError, "Something went wrong")
       return
     }
 
@@ -61,29 +62,29 @@ func (h *CartItemHandler) AddCartItem(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *CartItemHandler) DeleteCartItem(w http.ResponseWriter, r *http.Request) {
+    ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+    defer cancel()
+
     vars := mux.Vars(r)
 
     cartID, err := strconv.ParseInt(vars["cartId"], 10, 64)
-    if err != nil {
-      http.Error(w, "Invalid cart ID", http.StatusBadRequest)
+    if err != nil || cartID <= 0{
+      respondWithError(w, http.StatusBadRequest, "Invalid cart ID")
       return
     }
 
     itemID, err := strconv.ParseInt(vars["itemId"], 10, 64)
-    if err != nil {
-      http.Error(w, "Invalid item ID", http.StatusBadRequest)
+    if err != nil || itemID <= 0 {
+      respondWithError(w, http.StatusBadRequest, "Invalid item ID")
       return
     }
 
-    ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-    defer cancel()
-
     if err := h.cartItemService.DeleteCartItem(ctx, cartID, itemID); err != nil {
-       if errors.Is(err, service.ErrCartNotFound) {
-        http.Error(w, "Cart not found", http.StatusNotFound)
+       if errors.Is(err, errorsx.ErrCartNotFound) {
+        respondWithError(w, http.StatusNotFound, "Cart not found")
         return
       }
-      http.Error(w, "Internal server error", http.StatusInternalServerError)
+      respondWithError(w, http.StatusInternalServerError, "Something went wrong")
       return
     }
 
@@ -91,24 +92,24 @@ func (h *CartItemHandler) DeleteCartItem(w http.ResponseWriter, r *http.Request)
 }
 
 func (h *CartItemHandler) GetCartItems(w http.ResponseWriter, r *http.Request) {
-    vars := mux.Vars(r)
-
-    cartID, err := strconv.ParseInt(vars["cartId"], 10, 64)
-    if err != nil {
-      http.Error(w, "Invalid cart ID", http.StatusBadRequest)
-      return
-    }
-    
     ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
     defer cancel()
 
+    vars := mux.Vars(r)
+
+    cartID, err := strconv.ParseInt(vars["cartId"], 10, 64)
+    if err != nil || cartID <= 0 {
+      respondWithError(w, http.StatusBadRequest, "Invalid cart ID")
+      return
+    }
+
     items, err := h.cartItemService.GetCartItems(ctx, cartID)
     if err != nil {
-       if errors.Is(err, service.ErrCartNotFound) {
-        http.Error(w, "Cart not found", http.StatusNotFound)
+       if errors.Is(err, errorsx.ErrCartNotFound) {
+        respondWithError(w, http.StatusNotFound, "Cart not found")
         return
       }
-      http.Error(w, "Internal server error", http.StatusInternalServerError)
+      respondWithError(w, http.StatusInternalServerError, "Something went wrong")
       return
     }
 
