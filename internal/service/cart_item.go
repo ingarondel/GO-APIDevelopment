@@ -6,6 +6,7 @@ import (
 
     "github.com/ingarondel/GO-APIDevelopment/internal/model"
     "github.com/ingarondel/GO-APIDevelopment/internal/repository"
+    "github.com/ingarondel/GO-APIDevelopment/internal/errorsx"
 )
 
 type CartItemService struct {
@@ -17,32 +18,28 @@ func NewCartItemService(repo *repository.CartItemRepository) *CartItemService {
 }
 
 func (s *CartItemService) CreateCartItem(ctx context.Context, item *model.CartItem) error {
-    if item.CartID <= 0 {
-        return errors.New("invalid cart ID")
+    err := s.repo.CreateCartItem(ctx, item)
+    if err != nil {
+      log.Printf("Failed to create cart item: %v", err)
+      return err
     }
-    if item.Product == "" {
-        return errors.New("product name cannot be empty")
-    }
-    if item.Quantity <= 0 {
-        return errors.New("quantity must be greater than zero")
-    }
-
-    return s.repo.CreateCartItem(ctx, item)
+    return nil
 }
 
 func (s *CartItemService) GetCartItems(ctx context.Context, cartID int64) ([]model.CartItem, error) {
-    if cartID <= 0 {
-        return nil, errors.New("invalid cart ID")
+    items, err := s.repo.GetCartItems(ctx, cartID)
+    if err != nil {
+      log.Printf("Failed to get cart items for cart %d: %v", cartID, err)
+      return nil, err
     }
-    return s.repo.GetCartItems(ctx, cartID)
+    return items, nil
 }
 
 func (s *CartItemService) DeleteCartItem(ctx context.Context, cartID, itemID int64) error {
-    if cartID <= 0 {
-        return errors.New("invalid cart ID")
+    err := s.repo.DeleteCartItem(ctx, cartID, itemID)
+    if err != nil {
+      log.Printf("Failed to delete cart item for cart: %d, item: %d; %v", cartID, itemID, err)
+      return err
     }
-    if itemID <= 0 {
-        return errors.New("invalid item ID")
-    }
-    return s.repo.DeleteCartItem(ctx, cartID, itemID)
+    return nil
 }
