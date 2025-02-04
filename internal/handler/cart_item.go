@@ -84,6 +84,10 @@ func (h *CartItemHandler) DeleteCartItem(w http.ResponseWriter, r *http.Request)
         respondWithError(w, http.StatusNotFound, "Cart not found")
         return
       }
+       if errors.Is(err, errorsx.ErrCartItemNotFound) {
+        respondWithError(w, http.StatusNotFound, "Cart item not found")
+        return
+       }
       respondWithError(w, http.StatusInternalServerError, "Something went wrong")
       return
     }
