@@ -2,11 +2,10 @@ package service
 
 import (
     "context"
-    "errors"
+    "log"
 
     "github.com/ingarondel/GO-APIDevelopment/internal/model"
     "github.com/ingarondel/GO-APIDevelopment/internal/repository"
-    "github.com/ingarondel/GO-APIDevelopment/internal/errorsx"
 )
 
 type CartItemService struct {

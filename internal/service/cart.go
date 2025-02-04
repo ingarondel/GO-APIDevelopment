@@ -32,7 +32,7 @@ func (s *CartService) GetCart(ctx context.Context, id int64) (model.Cart, error)
     cart, err := s.repo.GetCart(ctx, id)
     if err != nil {
       if errors.Is(err, repository.ErrNotFound) { 
-        return model.Cart{}, ErrCartNotFound
+        return model.Cart{}, errorsx.ErrCartNotFound
       }
       log.Printf("Failed to get cart ID: %d: %v", id, err)
       return model.Cart{}, err
