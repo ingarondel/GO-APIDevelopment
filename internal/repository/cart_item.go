@@ -6,6 +6,7 @@ import (
     "errors"
     "fmt"
 
+    "github.com/ingarondel/GO-APIDevelopment/internal/errorsx"
     "github.com/ingarondel/GO-APIDevelopment/internal/model"
 )
 
@@ -35,10 +36,6 @@ func (r *CartItemRepository) GetCartItems(ctx context.Context, cartID int64) ([]
       items = append(items, item)
     }
 
-    if len(items) == 0 {
-        return nil, fmt.Errorf("cart with ID %d is empty", cartID)
-    }
-    
     return items, nil
 }
 
@@ -51,7 +48,7 @@ func (r *CartItemRepository) CreateCartItem(ctx context.Context, item *model.Car
         return fmt.Errorf("failed to find cart: %w", err)
     }
     if !cartExists {
-        return fmt.Errorf("cart with ID %d not found", item.CartID)
+        return errorsx.ErrCartNotFound
     }
 
     query := "INSERT INTO cart_items (cart_id, product, quantity) VALUES ($1, $2, $3) RETURNING id"
@@ -74,7 +71,7 @@ func (r *CartItemRepository) DeleteCartItem(ctx context.Context, cartID, itemID 
         return fmt.Errorf("failed to find cart: %w", err)
     }
     if !cartExists {
-        return fmt.Errorf("cart with ID %d not found", cartID)
+        return errorsx.ErrCartNotFound
     }
 
     var itemExists bool
@@ -84,7 +81,7 @@ func (r *CartItemRepository) DeleteCartItem(ctx context.Context, cartID, itemID 
         return fmt.Errorf("failed to check if cart item exists: %w", err)
     }
     if !itemExists {
-        return fmt.Errorf("cart item with ID %d not found in cart %d", itemID, cartID)
+        return errorsx.ErrCartItemNotFound
     }
 
 

@@ -7,10 +7,7 @@ import (
     "fmt"
 
     "github.com/ingarondel/GO-APIDevelopment/internal/model"
-)
-
-var (
-    ErrNotFound = errors.New("not found")
+    "github.com/ingarondel/GO-APIDevelopment/internal/errorsx"
 )
 
 type CartRepository struct {
@@ -38,10 +35,8 @@ func (r *CartRepository) GetCart(ctx context.Context, id int64) (model.Cart, err
     err := r.db.QueryRowContext(ctx, query, id).Scan(&cart.ID)
     if err != nil {
         if errors.Is(err, sql.ErrNoRows){
-            return cart, fmt.Errorf("%w: cart with ID %d not found", ErrNotFound, cart.ID)
+            return cart, errorsx.ErrCartNotFound
         }
-    }
-      if err!=nil{
         return cart, fmt.Errorf("failed to get cart: %w", err)
       }    
     return cart, nil
