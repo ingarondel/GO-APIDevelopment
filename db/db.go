@@ -26,14 +26,14 @@ func NewPostgresConnection(cfg *config.Config) (*sql.DB, error) {
         return nil, fmt.Errorf("failed to connect to the database: %w", err)
     }
 
-    if err = RunMigrations(connect); err != nil {
+    if err = runMigrations(connect); err != nil {
       return nil, err
     }
 
     return connect, nil
 }
 
-func RunMigrations(db *sql.DB) error {
+func runMigrations(db *sql.DB) error {
 	if err := goose.SetDialect("postgres"); err != nil {
 		return err
 	}
