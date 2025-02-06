@@ -1,6 +1,6 @@
 -- +goose Up
 -- +goose StatementBegin
-CREATE TABLE cart_items (
+CREATE TABLE IF NOT EXISTS cart_items (
     id 		 BIGSERIAL PRIMARY KEY,
     cart_id  BIGINT,
     product  VARCHAR(40),
