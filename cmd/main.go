@@ -2,25 +2,35 @@ package main
 
 import (
     "log"
+    "fmt"
     "net/http"
 
-    "github.com/gorilla/mux"
-    "github.com/ingarondel/GO-APIDevelopment/internal/repository"
+    "github.com/ingarondel/GO-APIDevelopment/config"
+    "github.com/ingarondel/GO-APIDevelopment/internal/db"
     "github.com/ingarondel/GO-APIDevelopment/internal/handler"
 )
 
 func main() {
-    db, err := repository.Connect()
+    cfg, err := config.LoadConfig()
     if err != nil {
-        log.Fatal("Database connection failed:", err)
+      log.Fatal("Config loading failed:", err)
     }
-    defer db.Close()
 
-    r := mux.NewRouter()
-    handler.Routes(r, db)
+    dbConnect, err := db.NewPostgresConnection()
+    if err != nil {
+      log.Fatal("Database connection failed:", err)
+    }
+    defer dbConnect.Close()
 
-    log.Println("Server started on :3000")
-    if err := http.ListenAndServe(":3000", r); err != nil {
-        log.Fatal("Server failed:", err)
+    if err := db.RunMigrations(dbConnect); err != nil {
+      log.Fatal("Failed to run migrations:", err)
+    }
+
+    r := handler.Routes(dbConnect)
+
+    serverAddress := fmt.Sprintf("%s:%s", cfg.ServerHost, cfg.ServerPort)
+    log.Printf("Server started on %s", serverAddress)
+    if err := http.ListenAndServe(serverAddress, r); err != nil {
+      log.Fatal("Server failed:", err)
     }
 }

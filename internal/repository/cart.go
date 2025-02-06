@@ -3,9 +3,11 @@ package repository
 import (
     "context"
     "database/sql"
-    "time"
+    "errors"
+    "fmt"
 
     "github.com/ingarondel/GO-APIDevelopment/internal/model"
+    "github.com/ingarondel/GO-APIDevelopment/internal/errorsx"
 )
 
 type CartRepository struct {
@@ -17,21 +19,25 @@ func NewCartRepository(db *sql.DB) *CartRepository {
 }
 
 func (r *CartRepository) CreateCart(ctx context.Context, cart *model.Cart) error {
-    ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
-    defer cancel()
     query := "INSERT INTO carts DEFAULT VALUES RETURNING id"
-    return r.db.QueryRowContext(ctx, query).Scan(&cart.ID)
+
+    err := r.db.QueryRowContext(ctx, query).Scan(&cart.ID)
+      if err!=nil {
+        return fmt.Errorf("failed to create cart: %w", err)
+      }
+    return nil
 }
 
 func (r *CartRepository) GetCart(ctx context.Context, id int64) (model.Cart, error) {
-    ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
-    defer cancel()
     query := "SELECT id FROM carts WHERE id = $1"
     var cart model.Cart
-    err := r.db.QueryRowContext(ctx, query, id).Scan(&cart.ID)
-    return cart, err
-}
 
-//во все методы репозитория нужно передавать контекстс
-//внутри каждого метода нужно создавать новый контекст с таймаутом допустим на 5 сек
-//использовать sqldb
+    err := r.db.QueryRowContext(ctx, query, id).Scan(&cart.ID)
+    if err != nil {
+        if errors.Is(err, sql.ErrNoRows){
+            return cart, errorsx.ErrCartNotFound
+        }
+        return cart, fmt.Errorf("failed to get cart: %w", err)
+      }    
+    return cart, nil
+}
