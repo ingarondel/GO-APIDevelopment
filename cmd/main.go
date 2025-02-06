@@ -6,7 +6,7 @@ import (
     "net/http"
 
     "github.com/ingarondel/GO-APIDevelopment/config"
-    "github.com/ingarondel/GO-APIDevelopment/internal/db"
+    "github.com/ingarondel/GO-APIDevelopment/db"
     "github.com/ingarondel/GO-APIDevelopment/internal/handler"
 )
 
@@ -16,15 +16,11 @@ func main() {
       log.Fatal("Config loading failed:", err)
     }
 
-    dbConnect, err := db.NewPostgresConnection()
+    dbConnect, err := db.NewPostgresConnection(cfg)
     if err != nil {
       log.Fatal("Database connection failed:", err)
     }
     defer dbConnect.Close()
-
-    if err := db.RunMigrations(dbConnect); err != nil {
-      log.Fatal("Failed to run migrations:", err)
-    }
 
     r := handler.Routes(dbConnect)
 

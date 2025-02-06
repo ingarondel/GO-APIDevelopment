@@ -3,19 +3,18 @@ package db
 import (
 	"database/sql"
 	"fmt"
+	"embed"
 
 	"github.com/ingarondel/GO-APIDevelopment/config"
 
 	_ "github.com/lib/pq"
-	"github.com/pressly/goose"
+	"github.com/pressly/goose/v3"
 )
 
-func NewPostgresConnection() (*sql.DB, error) { 
-    cfg, err := config.LoadConfig()
-    if err != nil {
-        return nil, err
-    }
+//go:embed migrations/*.sql
+var migrationFiles embed.FS
 
+func NewPostgresConnection(cfg *config.Config) (*sql.DB, error) { 
     connectionString := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s", cfg.PostgresHost, cfg.User, cfg.Password, cfg.DBName, cfg.PostgresPort, cfg.SSLMode)
 
 	connect, err := sql.Open("postgres", connectionString)
@@ -27,6 +26,10 @@ func NewPostgresConnection() (*sql.DB, error) {
         return nil, fmt.Errorf("failed to connect to the database: %w", err)
     }
 
+    if err = RunMigrations(connect); err != nil {
+      return nil, err
+    }
+
     return connect, nil
 }
 
@@ -35,7 +38,9 @@ func RunMigrations(db *sql.DB) error {
 		return err
 	}
 
-	if err := goose.Up(db, "./internal/db//migrations"); err != nil {
+	goose.SetBaseFS(migrationFiles)
+
+	if err := goose.Up(db, "migrations"); err != nil {
 		return fmt.Errorf("failed to run migrations: %w", err)
 	}
 
